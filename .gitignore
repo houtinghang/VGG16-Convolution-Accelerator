@@ -1,0 +1,17 @@
+/build/
+__pycache__/
+*.pyc
+*.fsdb
+*.vcd
+*.vpd
+*.log
+*.key
+*.daidir/
+/csrc/
+/simv
+/DVEfiles/
+/verdiLog/
+/novas*
+*.ddc
+*.sdf
+*.svf

@@ -1,0 +1,7 @@
+*.v text eol=lf
+*.py text eol=lf
+*.tcl text eol=lf
+*.md text eol=lf
+*.png binary
+*.bmp binary
+*.pdf binary
