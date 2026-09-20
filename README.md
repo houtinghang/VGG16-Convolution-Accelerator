@@ -37,45 +37,11 @@ Convolution repeatedly multiplies neighboring pixels by kernel weights and accum
 
 This project uses line buffers to reuse neighboring pixels and processes channels in batches. It explores how to organize the convolution datapath, preserve partial sums between batches, and convert the accumulated values into visible feature maps.
 
-## Implementation
+## Architecture
 
-```mermaid
-flowchart LR
-    A["Testbench: image and weights"] --> B["Input formatting"]
-    B --> C["Line buffers: 3 x 3 windows"]
-    C --> D["Parallel multipliers and adder trees"]
-    D --> E["Channel sums"]
-    E --> F["Bias, ReLU and 8-bit output"]
-    F --> G["Testbench: BMP feature maps"]
-    E --> H["Layer 2 partial-sum memory in testbench"]
-    H --> E
-```
+![VGG16 convolution accelerator architecture](docs/images/vgg16-architecture.svg)
 
-### Line Buffers and Convolution
-
-The testbench supplies a padded 226 × 226 image stream. Each line buffer stores 455 samples and exposes nine taps for a 3 × 3 window. Each `conv_3x3_ci` block computes nine products, combines them with an adder tree, and registers a 36-bit partial sum.
-
-| Configuration | Layer 1 | Layer 2 |
-|:---|:---|:---|
-| Total input channels | 3 | 64 |
-| Total output channels | 64 | 64 |
-| Parallel input channels | 3 | 4 |
-| Parallel output channels | 3 | 4 |
-| Output batches | 22, with one useful channel in the last batch | 16 |
-| Input groups per output batch | 1 | 16 |
-| Output bit selection | `[11:4]` | `[14:7]` |
-
-The top module instantiates separate Layer 1 and Layer 2 datapaths and selects their outputs with `layer_sel`. They use the same convolution building block but are separate hardware instances.
-
-### Partial-Sum Accumulation
-
-Layer 2 processes four input channels at a time. The testbench stores the partial sums and feeds them back through `psum_in_ch0`–`psum_in_ch3` for the next group. On the last input group, `is_last_group` enables bias addition and the final ReLU output.
-
-The partial-sum memory, file access, and batch scheduling are implemented in the simulation testbench. A standalone hardware system would need its own memory interface and controller.
-
-### Fixed-Point Output
-
-Inputs are 8-bit pixels, weights and biases are signed 16-bit values, and accumulation uses signed 36-bit values. Layer 1 subtracts 128 from the incoming pixels; Layer 2 uses the previous layer's unsigned 8-bit outputs. ReLU sets negative results to zero, selects the configured output bits, and saturates values above 255.
+[View SVG](docs/images/vgg16-architecture.svg) · [Edit in draw.io](docs/images/vgg16-architecture.drawio)
 
 ## Data and Project Files
 
